@@ -1,19 +1,19 @@
 # vim:set ft=dockerfile:
 FROM alpine:edge
 
-ENV UID 110245
-ENV GID 110245
-
-RUN addgroup -g "${GID}" -S nzbget && adduser -S -u "${UID}" -G nzbget nzbget && \
+RUN addgroup -S nzbget && adduser -S -G nzbget nzbget && \
     echo "@testing http://dl-3.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
 
-RUN apk add --no-cache bash nzbget@testing unrar
+RUN apk add --no-cache bash nzbget@testing su-exec unrar
 
 RUN mkdir /data /config && cp /usr/share/nzbget/nzbget.conf /config && \
     sed -i 's/MainDir=~\/downloads/MainDir=\/data/g' /config/nzbget.conf && \
-    chown -R nzbget:nzbget /data /config
+    chown -R nzbget:nzbget /config /data
 VOLUME /data
+WORKDIR /data
+
+COPY docker-entrypoint.sh /usr/local/bin/
+ENTRYPOINT ["docker-entrypoint.sh"]
 
 EXPOSE 6789
-USER nzbget
 CMD ["nzbget", "-s", "-c", "/config/nzbget.conf"] 
